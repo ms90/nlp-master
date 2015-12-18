@@ -14,6 +14,8 @@ class Main {
 
     public static void main(String[] args) throws IOException {
         Scanner sc = new Scanner(System.in);
+        File dir = new File("src/main/resources/training/annotations");
+        FileFilter fileFilter = new WildcardFileFilter("*.conll");
 
         System.out.println("Enter '1' to generate unannotated training data from 10-K reports.");
         System.out.println("Enter '2' to generate annotated training data for OpenNLP from exported WebAnno files.");
@@ -29,8 +31,6 @@ class Main {
 
             case "2":
                 System.out.println("--------------------------------------------------------------------------");
-                File dir = new File("src/main/resources/training/annotations");
-                FileFilter fileFilter = new WildcardFileFilter("*.conll");
                 File[] files = dir.listFiles(fileFilter);
                 for (File f : files) {
                     WebAnno.generateOpenNlpTD(f);
@@ -40,7 +40,11 @@ class Main {
 
             case "3":
                 System.out.println("--------------------------------------------------------------------------");
-                WebAnno.runStatistics("src/main/resources/training/annotations/microsoft.conll");
+                File[] files2 = dir.listFiles(fileFilter);
+                for (File f : files2) {
+                    WebAnno.runStatistics(f);
+                }
+                System.out.println("Done!");
                 break;
         }
     }

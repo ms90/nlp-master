@@ -31,6 +31,7 @@
 *.ipr
 *.iws
 
+/src/main/resources/training/annotations
 ## Plugin-specific files:
 
 # IntelliJ

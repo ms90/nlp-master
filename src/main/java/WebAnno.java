@@ -15,7 +15,7 @@ class WebAnno {
         String[] splitLine;
         String[] annoSplit;
         boolean annotation = false;
-        String fileName = in.getName().replace(".conll", "-annotated.txt");
+        String fileName = in.getName().replace("%26", "&").replace("%2520", " ").replace(".conll", "-annotated.txt");
         File out = new File("src/main/resources/training/annotations/" + fileName);
         StringBuilder sb = new StringBuilder();
 
@@ -52,7 +52,7 @@ class WebAnno {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        trimFile(out);  //Trims file to Part I only (as best as possible)
+        postProcessFile(out);  //Trims file to Part I only (as best as possible) and corrects some punctuation errors
         System.out.println("-----------------------------------------------");
     }
 
@@ -60,7 +60,7 @@ class WebAnno {
         //TODO
     }
 
-    private static void trimFile(File in) {
+    private static void postProcessFile(File in) {
         String line;
         boolean start = false;
         int lineCounter = 0;
@@ -70,11 +70,18 @@ class WebAnno {
         try (BufferedReader br = new BufferedReader(new FileReader(in)); BufferedWriter bw = new BufferedWriter(new FileWriter(out))) {
             while ((line = br.readLine()) != null) {
                 lineCounter++;
+                if (line.equals(".")) {
+                    continue;
+                }
                 if (line.toLowerCase().contains("item 1")){
                     start = true;
                 }
                 if (start) {
-                    bw.write(line);
+                    if (!line.matches(".*\\p{Punct}")) {
+                        bw.write(line + " .");
+                    } else {
+                        bw.write(line);
+                    }
                     bw.newLine();
                 }
                 if (line.toLowerCase().contains("mine safety disclosures") && lineCounter > 150) {
@@ -91,7 +98,7 @@ class WebAnno {
         }
     }
 
-    public static void runStatistics(String inPath) {
+    public static void runStatistics(File in) {
         String line;
         int tokens = 0;
         int lines = 0;
@@ -102,11 +109,10 @@ class WebAnno {
         String[] splitLine;
         String[] annoSplit;
 
-        String[] file = inPath.split("/");
-        System.out.println("Processing " + file[file.length - 1]);
+        System.out.println("Processing " + in.getName());
         System.out.println();
 
-        try (BufferedReader br = new BufferedReader(new FileReader(inPath))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(in))) {
             while ((line = br.readLine()) != null) {
                 if (!line.isEmpty()) {
                     tokens += 1;
@@ -137,9 +143,11 @@ class WebAnno {
         System.out.println("Tokens: " + tokens);
         System.out.println("Lines: " + lines);
         System.out.println("Annotations (total): " + annotations);
-        System.out.println("Goods: " + goods + " (" + Double.parseDouble(new DecimalFormat("##.##").format((double) goods / annotations * 100)) + "%)");
-        System.out.println("Assets: " + assets + " (" + Double.parseDouble(new DecimalFormat("##.##").format((double) assets / annotations * 100)) + "%)");
-        System.out.println("Services: " + services + " (" + Double.parseDouble(new DecimalFormat("##.##").format((double) services / annotations * 100)) + "%)");
+        if (annotations != 0) {
+            System.out.println("Goods: " + goods + " (" + Double.parseDouble(new DecimalFormat("##.##").format((double) goods / annotations * 100)) + "%)");
+            System.out.println("Assets: " + assets + " (" + Double.parseDouble(new DecimalFormat("##.##").format((double) assets / annotations * 100)) + "%)");
+            System.out.println("Services: " + services + " (" + Double.parseDouble(new DecimalFormat("##.##").format((double) services / annotations * 100)) + "%)");
+        }
         System.out.println("-----------------------------------------------");
     }
 }
