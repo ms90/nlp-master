@@ -19,7 +19,9 @@ class Main {
 
         System.out.println("Enter '1' to generate unannotated training data from 10-K reports.");
         System.out.println("Enter '2' to generate annotated training data for OpenNLP from exported WebAnno files.");
-        System.out.println("Enter '3' to generate statistics from exported WebAnno files.");
+        System.out.println("Enter '3' to generate clean data for OpenNLP from exported WebAnno files.");
+        System.out.println("Enter '4' to generate statistics from exported WebAnno files.");
+        System.out.println("Enter '5' to create file for model training.");
         System.out.println("--------------------------------------------------------------------------");
 
         switch (sc.nextLine()) {
@@ -31,21 +33,39 @@ class Main {
 
             case "2":
                 System.out.println("--------------------------------------------------------------------------");
-                File[] files = dir.listFiles(fileFilter);
-                for (File f : files) {
-                    WebAnno.generateOpenNlpTD(f);
+                File[] f1 = dir.listFiles(fileFilter);
+                for (File f : f1) {
+                    WebAnno.genOpenNlp(f, true);
                 }
                 System.out.println("Done!");
                 break;
 
             case "3":
                 System.out.println("--------------------------------------------------------------------------");
-                File[] files2 = dir.listFiles(fileFilter);
-                for (File f : files2) {
+                File[] f2 = dir.listFiles(fileFilter);
+                for (File f : f2) {
+                    WebAnno.genOpenNlp(f, false);
+                }
+                System.out.println("Done!");
+                break;
+
+            case "4":
+                System.out.println("--------------------------------------------------------------------------");
+                File[] f3 = dir.listFiles(fileFilter);
+                for (File f : f3) {
                     WebAnno.runStatistics(f);
                 }
                 System.out.println("Done!");
                 break;
+
+            case "5":
+                //OpenNLP.createTrainingFile();
+                File path = new File("src/main/resources/annotations/folder");
+                if (path.isDirectory()) {
+                    System.out.println("is directory!");
+                }
+                File[] f = dir.listFiles();
+                System.out.println(f.length);
         }
     }
 

@@ -112,4 +112,19 @@ class OpenNLP {
     private static void trainModel(File annotations) {
         //TODO
     }
+
+    public static void createTrainingFile(File[] files) {
+        String line;
+        File trainingFile = new File("src/main/resources/training/tf.train");
+
+        for (File f : files) {
+            try (BufferedReader br = new BufferedReader(new FileReader(f)); BufferedWriter bw = new BufferedWriter(new FileWriter(trainingFile, true))) {
+                while ((line = br.readLine()) != null) {
+                    bw.write(line);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 }
