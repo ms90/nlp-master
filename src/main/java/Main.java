@@ -14,7 +14,7 @@ class Main {
 
     public static void main(String[] args) throws IOException {
         Scanner sc = new Scanner(System.in);
-        File dir = new File("src/main/resources/training/annotations");
+        File dir = new File("src/main/resources/training/annotations/exported");
         FileFilter fileFilter = new WildcardFileFilter("*.conll");
 
         System.out.println("Enter '1' to generate unannotated training data from 10-K reports.");
@@ -27,7 +27,7 @@ class Main {
         switch (sc.nextLine()) {
             case "1":
                 System.out.println("--------------------------------------------------------------------------");
-                processReports("src/main/resources/training/reports/reports.txt", true);
+                processReports("src/main/resources/training/reports/reports.txt");
                 System.out.println("Done!");
                 break;
 
@@ -59,17 +59,11 @@ class Main {
                 break;
 
             case "5":
-                //OpenNLP.createTrainingFile();
-                File path = new File("src/main/resources/annotations/folder");
-                if (path.isDirectory()) {
-                    System.out.println("is directory!");
-                }
-                File[] f = dir.listFiles();
-                System.out.println(f.length);
+                OpenNLP.trainModel(new File("src/main/resources/training/annotations/annotated/test.train"));
         }
     }
 
-    private static void processReports(String inPath, boolean trainOnly) {
+    private static void processReports(String inPath) {
         String[] split;
         String line;
 
@@ -79,11 +73,7 @@ class Main {
                 System.out.println("Processing " + split[1]);
                 Document document = Jsoup.parse(new URL(split[1]).openStream(), "UTF-8", split[1]);
                 String text = document.body().text();
-                if (trainOnly) {
-                    OpenNLP.runPipeline(text, new File("src/main/resources/training/" + split[0] + ".txt"), true);
-                } else {
-                    OpenNLP.runPipeline(text, null, false);
-                }
+                OpenNLP.preProcess(text, new File("src/main/resources/training/" + split[0] + ".txt"));
             }
         } catch (IOException e) {
             e.printStackTrace();

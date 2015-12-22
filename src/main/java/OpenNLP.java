@@ -1,10 +1,18 @@
+import opennlp.tools.namefind.NameFinderME;
+import opennlp.tools.namefind.NameSample;
+import opennlp.tools.namefind.NameSampleDataStream;
+import opennlp.tools.namefind.TokenNameFinderModel;
 import opennlp.tools.sentdetect.SentenceDetectorME;
 import opennlp.tools.sentdetect.SentenceModel;
 import opennlp.tools.tokenize.Tokenizer;
 import opennlp.tools.tokenize.TokenizerME;
 import opennlp.tools.tokenize.TokenizerModel;
+import opennlp.tools.util.ObjectStream;
+import opennlp.tools.util.PlainTextByLineStream;
 
 import java.io.*;
+import java.nio.charset.Charset;
+import java.util.Collections;
 
 /**
  * NER Pipeline consisting of sentence detector, tokenizer and named entity recognizer
@@ -12,28 +20,20 @@ import java.io.*;
  */
 class OpenNLP {
 
-    public static void runPipeline(String text, File out, boolean trainOnly) throws FileNotFoundException {
+    public static void preProcess(String text, File out) throws FileNotFoundException {
         SentenceModel sm = loadSentenceModel();
         TokenizerModel tm = loadTokenizerModel();
 
         long startTime = System.currentTimeMillis();
 
-        try {
-            if (trainOnly) {
-                System.out.println("Generating unannotated training file ...");
-                generateTrainingFile(text, out, sm, tm);
-            } else {
-                System.out.println("Running Named Entity Recognition ...");
-                runNER(text, sm, tm);
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+        System.out.println("Generating unannotated training file ...");
+        generateTrainingFile(text, out, sm, tm);
+
         System.out.println("Duration: " + (System.currentTimeMillis() - startTime) + " ms");
         System.out.println("-----------------------------------------------");
     }
 
-    private static void generateTrainingFile(String text, File output, SentenceModel sm, TokenizerModel tm) throws FileNotFoundException {
+    private static void generateTrainingFile(String text, File output, SentenceModel sm, TokenizerModel tm) {
         try(BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(output), "UTF-8"))) {
             String[] sentences = detectSentences(text, sm);
             for (String s : sentences){
@@ -50,7 +50,7 @@ class OpenNLP {
         }
     }
 
-    private static void runNER(String text, SentenceModel sm, TokenizerModel tm) throws FileNotFoundException {
+    private static void runNER(String text, SentenceModel sm, TokenizerModel tm) {
         String[] sentences = detectSentences(text, sm);
         for (String s : sentences){
             String[] tokens = tokenizeSentence(s, tm);
@@ -109,8 +109,29 @@ class OpenNLP {
         //TODO
     }
 
-    private static void trainModel(File annotations) {
-        //TODO
+    public static void trainModel(File annotations) throws IOException {
+        Charset charset = Charset.forName("UTF-8");
+        ObjectStream<NameSample> sampleStream;
+        TokenNameFinderModel model = null;
+        BufferedOutputStream modelOut;
+
+        ObjectStream<String> lineStream = new PlainTextByLineStream(new FileInputStream(annotations), charset);
+        sampleStream = new NameSampleDataStream(lineStream);
+
+        try {
+            model = NameFinderME.train("en", "products", sampleStream, Collections.<String,Object>emptyMap());
+        } finally {
+            sampleStream.close();
+        }
+
+        modelOut = null;
+        try {
+            modelOut = new BufferedOutputStream(new FileOutputStream(new File("src/main/resources/models/test.bin")));
+            model.serialize(modelOut);
+        } finally {
+            if (modelOut != null)
+                modelOut.close();
+        }
     }
 
     public static void createTrainingFile(File[] files) {
@@ -126,5 +147,9 @@ class OpenNLP {
                 e.printStackTrace();
             }
         }
+    }
+
+    private static void evaluateNER() {
+        //TODO
     }
 }

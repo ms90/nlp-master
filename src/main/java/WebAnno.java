@@ -95,11 +95,7 @@ class WebAnno {
                     start = true;
                 }
                 if (start) {
-                    if (!line.matches(".*\\p{Punct}")) {
-                        bw.write(line + " .");
-                    } else {
-                        bw.write(line);
-                    }
+                    bw.write(line);
                     bw.newLine();
                 }
                 if (line.toLowerCase().contains("mine safety disclosures") && lineCounter > 150) {
