@@ -14,7 +14,7 @@ class Main {
 
     public static void main(String[] args) throws IOException {
         Scanner sc = new Scanner(System.in);
-        File dir = new File("src/main/resources/training/annotations/exported");
+        File dir = new File("src/main/resources/training/exported");
         FileFilter fileFilter = new WildcardFileFilter("*.conll");
 
         System.out.println("Enter '1' to generate unannotated training data from 10-K reports.");
@@ -27,7 +27,7 @@ class Main {
         switch (sc.nextLine()) {
             case "1":
                 System.out.println("--------------------------------------------------------------------------");
-                processReports("src/main/resources/training/reports/reports.txt");
+                processReports("src/main/resources/training/reports.txt");
                 System.out.println("Done!");
                 break;
 
@@ -59,7 +59,7 @@ class Main {
                 break;
 
             case "5":
-                OpenNLP.trainModel(new File("src/main/resources/training/annotations/annotated/test.train"));
+                OpenNLP.trainModel(new File("src/main/resources/training/annotated/test.train"));
         }
     }
 

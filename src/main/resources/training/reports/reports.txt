@@ -1,6 +1,0 @@
-Aqua America -> http://www.sec.gov/Archives/edgar/data/78128/000119312514080172/d684476d10k.htm
-CMS Energy -> http://www.sec.gov/Archives/edgar/data/201533/000110465914006974/a14-1343_210k.htm
-Exelon -> http://www.sec.gov/Archives/edgar/data/9466/000119312514051838/d666092d10k.htm
-AT&T -> http://www.sec.gov/Archives/edgar/data/732717/000073271714000010/ye13_10k.htm
-Level 3 Communications -> http://www.sec.gov/Archives/edgar/data/794323/000079432314000005/lvlt-123113_10k.htm
-Frontier Communications -> http://www.sec.gov/Archives/edgar/data/20520/000002052014000017/ftr-20131231x10k.htm
