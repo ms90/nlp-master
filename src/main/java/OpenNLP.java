@@ -27,13 +27,13 @@ class OpenNLP {
         long startTime = System.currentTimeMillis();
 
         System.out.println("Generating unannotated training file ...");
-        generateTrainingFile(text, out, sm, tm);
+        generateTokenizedReport(text, out, sm, tm);
 
         System.out.println("Duration: " + (System.currentTimeMillis() - startTime) + " ms");
         System.out.println("-----------------------------------------------");
     }
 
-    private static void generateTrainingFile(String text, File output, SentenceModel sm, TokenizerModel tm) {
+    private static void generateTokenizedReport(String text, File output, SentenceModel sm, TokenizerModel tm) {
         try(BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(output), "UTF-8"))) {
             String[] sentences = detectSentences(text, sm);
             for (String s : sentences){
@@ -48,15 +48,6 @@ class OpenNLP {
         }catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private static void runNER(String text, SentenceModel sm, TokenizerModel tm) {
-        String[] sentences = detectSentences(text, sm);
-        for (String s : sentences){
-            String[] tokens = tokenizeSentence(s, tm);
-            runNerOnSentence(tokens);
-        }
-
     }
 
     private static SentenceModel loadSentenceModel() throws FileNotFoundException {
@@ -143,6 +134,7 @@ class OpenNLP {
                 while ((line = br.readLine()) != null) {
                     bw.write(line);
                 }
+                bw.newLine();
             } catch (IOException e) {
                 e.printStackTrace();
             }
