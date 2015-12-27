@@ -66,10 +66,6 @@ class WebAnno {
         System.out.println("-----------------------------------------------");
     }
 
-    public static void genStanfordNlp(File in, boolean annotate) {
-        //TODO
-    }
-
     private static void postProcessFile(File in, boolean annotate) {
         //System.out.println(in.getPath());
         String line;
