@@ -9,21 +9,14 @@ import java.text.DecimalFormat;
  */
 class WebAnno {
 
-    public static void genOpenNlp(File in, boolean annotate) {
+    public static void genOpenNlp(File in) {
 
         String line;
         String[] splitLine;
         String[] annoSplit;
         boolean annotation = false;
-        String fileName;
-        File out;
-        if (annotate) {
-            fileName = in.getName().replace("%26", "&").replace("%2520", " ").replace(".conll", ".an");
-            out = new File("src/main/resources/training/annotations/annotated/" + fileName);
-        } else {
-            fileName = in.getName().replace("%26", "&").replace("%2520", " ").replace(".conll", ".cl");
-            out = new File("src/main/resources/training/annotations/clean/" + fileName);
-        }
+        String fileName = in.getName().replace("%26", "&").replace("%2520", " ").replace(".conll", ".an");
+        File out = new File("src/main/resources/training/onlp/annotated/" + fileName);
         StringBuilder sb = new StringBuilder();
 
         System.out.println("Processing " + "\"" + in.getName() + "\"");
@@ -36,57 +29,47 @@ class WebAnno {
                     bw.newLine();
                 } else {
                     splitLine = line.split(" ");
-                    if (annotate) {
-                        if (splitLine[1].equals("O")) {
+                    if (splitLine[1].equals("O")) {
+                        if (annotation) {
+                            sb.append("<END> ");
+                            annotation = false;
+                        }
+                        sb.append(splitLine[0]).append(" ");
+                    } else {
+                        annoSplit = splitLine[1].split("-");
+                        if (annoSplit[0].equals("B")) {
                             if (annotation) {
                                 sb.append("<END> ");
-                                annotation = false;
                             }
-                            sb.append(splitLine[0]).append(" ");
-                        } else {
-                            annoSplit = splitLine[1].split("-");
-                            if (annoSplit[0].equals("B")) {
-                                annotation = true;
-                                sb.append("<START:").append(annoSplit[1]).append("> ").append(splitLine[0]).append(" ");
-                            }
-                            if (annoSplit[0].equals("I")) {
-                                annotation = true;
-                                sb.append(splitLine[0]).append(" ");
-                            }
+                            annotation = true;
+                            sb.append("<START:").append(annoSplit[1]).append("> ").append(splitLine[0]).append(" ");
                         }
-                    } else {
-                        sb.append(splitLine[0]).append(" ");
+                        if (annoSplit[0].equals("I")) {
+                            annotation = true;
+                            sb.append(splitLine[0]).append(" ");
+                        }
                     }
+                    sb.append(splitLine[0]).append(" ");
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        postProcessFile(out, annotate);  //Trims file to Part I only (as best as possible) and corrects some punctuation errors
+        postProcessFile(out);  //Trims file to Part I only (as best as possible) and corrects some punctuation errors
         System.out.println("-----------------------------------------------");
     }
 
-    private static void postProcessFile(File in, boolean annotate) {
+    private static void postProcessFile(File in) {
         //System.out.println(in.getPath());
         String line;
         boolean start = false;
         int lineCounter = 0;
-        String fileName;
-        File out;
-        if (annotate) {
-            fileName = in.getName().replace(".an", "-p1.an");
-            out = new File("src/main/resources/training/annotations/annotated/" + fileName);
-        } else {
-            fileName = in.getName().replace(".cl", "-p1.cl");
-            out = new File("src/main/resources/training/annotations/clean/" + fileName);
-        }
+        String fileName = in.getName().replace(".an", "-p1.an");
+        File out = new File("src/main/resources/training/onlp/annotated/" + fileName);
 
         try (BufferedReader br = new BufferedReader(new FileReader(in)); BufferedWriter bw = new BufferedWriter(new FileWriter(out))) {
             while ((line = br.readLine()) != null) {
                 lineCounter++;
-                if (line.equals(".")) {
-                    continue;
-                }
                 if (line.toLowerCase().contains("item 1")){
                     start = true;
                 }

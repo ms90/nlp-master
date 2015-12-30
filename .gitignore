@@ -50,3 +50,5 @@ crashlytics-build.properties
 # Custom
 /docs
 /src/main/resources/training
+/src/main/resources/models/snlp
+/src/main/resources/models/onlp/custom

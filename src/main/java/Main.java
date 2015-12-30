@@ -1,3 +1,4 @@
+import opennlp.tools.util.eval.FMeasure;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -5,7 +6,9 @@ import org.jsoup.nodes.Document;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Scanner;
 
 /**
@@ -13,18 +16,20 @@ import java.util.Scanner;
  * @author Maxim Serebrianski
  */
 class Main {
-    static int foldCounter = 1;
+    private static int foldCounter = 1;
+    private static final FileFilter directoryFilter = File::isDirectory;
 
     public static void main(String[] args) throws IOException {
         Scanner sc = new Scanner(System.in);
-        File dir = new File("src/main/resources/training/exported");
+        File dir = new File("src/main/resources/training/conll");
         FileFilter fileFilter = new WildcardFileFilter("*.conll");
 
         System.out.println("Enter '1' to generate unannotated training data from 10-K reports.");
         System.out.println("Enter '2' to generate annotated training data for OpenNLP from exported WebAnno files.");
-        System.out.println("Enter '3' to generate clean data for OpenNLP from exported WebAnno files.");
-        System.out.println("Enter '4' to generate statistics from exported WebAnno files.");
-        System.out.println("Enter '5' to copy annotation files into stratified folds.");
+        System.out.println("Enter '3' to generate statistics from exported WebAnno files.");
+        System.out.println("Enter '4' to copy annotation files into stratified folds (for OpenNLP).");
+        System.out.println("Enter '5' to evaluate OpenNLP model in global setting.");
+        System.out.println("Enter '6' to evaluate OpenNLP model per sector.");
         System.out.println("--------------------------------------------------------------------------");
 
         switch (sc.nextLine()) {
@@ -38,21 +43,12 @@ class Main {
                 System.out.println("--------------------------------------------------------------------------");
                 File[] f1 = dir.listFiles(fileFilter);
                 for (File f : f1) {
-                    WebAnno.genOpenNlp(f, true);
+                    WebAnno.genOpenNlp(f);
                 }
                 System.out.println("Done!");
                 break;
 
             case "3":
-                System.out.println("--------------------------------------------------------------------------");
-                File[] f2 = dir.listFiles(fileFilter);
-                for (File f : f2) {
-                    WebAnno.genOpenNlp(f, false);
-                }
-                System.out.println("Done!");
-                break;
-
-            case "4":
                 System.out.println("--------------------------------------------------------------------------");
                 File[] f3 = dir.listFiles(fileFilter);
                 for (File f : f3) {
@@ -61,10 +57,57 @@ class Main {
                 System.out.println("Done!");
                 break;
 
-            case "5":
+            case "4":
                 System.out.println("--------------------------------------------------------------------------");
+                System.out.println("Copying files to folds...");
                 createFolds();
                 System.out.println("Done!");
+                break;
+
+            case "5":
+                System.out.println("--------------------------------------------------------------------------");
+                File path = new File("src/main/resources/training/onlp/folds");
+                File[] dirs = path.listFiles(directoryFilter);
+                File[][] files = new File[10][];
+                ArrayList<File> trainFiles;
+                int i = 0;
+                ArrayList<FMeasure> measures = new ArrayList<>();
+                Double pre = 0.0;
+                Double rec = 0.0;
+                Double fm = 0.0;
+
+                for (File folder : dirs) {
+                    files[i] = folder.listFiles();
+                    i++;
+                }
+
+                for (int j=0; j<10; j++) {
+//                for (int j=0; j<1; j++) { // only 1 round
+                    trainFiles = new ArrayList<>();
+                    for (File[] f : files) {
+                        if (!Arrays.equals(f, files[j])){
+                            Collections.addAll(trainFiles, f);
+                        }
+                    }
+                    Collections.addAll(measures, OpenNLP.evaluateFold(files[j], trainFiles.toArray(new File[trainFiles.size()]), j+1));
+                    System.out.println("--------------------------------------------------------------------------");
+                }
+
+                for (FMeasure m : measures) {
+                    pre += m.getPrecisionScore();
+                    rec += m.getRecallScore();
+                    fm += m.getFMeasure();
+                }
+
+                System.out.println("Average Precision: " + pre/measures.size());
+                System.out.println("Average Recall: " + rec/measures.size());
+                System.out.println("Average F-Measure: " + fm/measures.size());
+                System.out.println("--------------------------------------------------------------------------");
+                System.out.println("Done!");
+                break;
+
+            case "6":
+                System.out.println("--------------------------------------------------------------------------");
         }
     }
 
@@ -86,10 +129,7 @@ class Main {
     }
 
     private static void createFolds() throws IOException {
-        File path = new File("src/main/resources/training/annotated");
-
-        FileFilter directoryFilter = File::isDirectory;
-
+        File path = new File("src/main/resources/training/onlp/annotated");
         File[] dirs = path.listFiles(directoryFilter);
         File[][] files = new File[10][];
         int i = 0;
@@ -105,7 +145,7 @@ class Main {
             foldCounter = 1;
             for (File file : f) {
                 findNextFold();
-                Files.copy(file.toPath(), new File("src/main/resources/training/folds/" + foldCounter + "/" + file.getName()).toPath());
+                Files.copy(file.toPath(), new File("src/main/resources/training/onlp/folds/" + foldCounter + "/" + file.getName()).toPath());
                 //System.out.println("Copy " + file.getName() + " to Fold " + foldCounter);
                 if (foldCounter <10) {
                     foldCounter++;
@@ -117,11 +157,7 @@ class Main {
     }
 
     private static void findNextFold() {
-        //System.out.println("----------------");
-        //System.out.println("Fold: " + new File("src/main/resources/training/folds/" + foldCounter).getName()
-        //        + " Size: " + new File("src/main/resources/training/folds/" + foldCounter).list().length);
-        if (new File("src/main/resources/training/folds/" + foldCounter).list().length >= 10) {
-            //System.out.println("Fold " + foldCounter + " full!");
+        if (new File("src/main/resources/training/onlp/folds/" + foldCounter).list().length >= 10) {
             if (foldCounter <10) {
                 foldCounter++;
             } else {
