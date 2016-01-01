@@ -23,6 +23,15 @@ class Main {
         Scanner sc = new Scanner(System.in);
         File dir = new File("src/main/resources/training/conll");
         FileFilter fileFilter = new WildcardFileFilter("*.conll");
+        File path;
+        File[] dirs;
+        File[][] files;
+        ArrayList<File> trainFiles;
+        int i = 0;
+        ArrayList<FMeasure> measures;
+        Double pre = 0.0;
+        Double rec = 0.0;
+        Double fm = 0.0;
 
         System.out.println("Enter '1' to generate unannotated training data from 10-K reports.");
         System.out.println("Enter '2' to generate annotated training data for OpenNLP from exported WebAnno files.");
@@ -66,15 +75,10 @@ class Main {
 
             case "5":
                 System.out.println("--------------------------------------------------------------------------");
-                File path = new File("src/main/resources/training/onlp/folds");
-                File[] dirs = path.listFiles(directoryFilter);
-                File[][] files = new File[10][];
-                ArrayList<File> trainFiles;
-                int i = 0;
-                ArrayList<FMeasure> measures = new ArrayList<>();
-                Double pre = 0.0;
-                Double rec = 0.0;
-                Double fm = 0.0;
+                path = new File("src/main/resources/training/onlp/folds");
+                dirs = path.listFiles(directoryFilter);
+                files = new File[10][];
+                measures = new ArrayList<>();
 
                 for (File folder : dirs) {
                     files[i] = folder.listFiles();
@@ -82,14 +86,13 @@ class Main {
                 }
 
                 for (int j=0; j<10; j++) {
-//                for (int j=0; j<1; j++) { // only 1 round
                     trainFiles = new ArrayList<>();
                     for (File[] f : files) {
                         if (!Arrays.equals(f, files[j])){
                             Collections.addAll(trainFiles, f);
                         }
                     }
-                    Collections.addAll(measures, OpenNLP.evaluateFold(files[j], trainFiles.toArray(new File[trainFiles.size()]), j+1));
+                    Collections.addAll(measures, OpenNLP.evaluate(files[j], trainFiles.toArray(new File[trainFiles.size()]), j+1, true));
                     System.out.println("--------------------------------------------------------------------------");
                 }
 
@@ -99,15 +102,49 @@ class Main {
                     fm += m.getFMeasure();
                 }
 
-                System.out.println("Average Precision: " + pre/measures.size());
-                System.out.println("Average Recall: " + rec/measures.size());
-                System.out.println("Average F-Measure: " + fm/measures.size());
+                System.out.println("Global Precision: " + pre/measures.size());
+                System.out.println("Global Recall: " + rec/measures.size());
+                System.out.println("Global F-Measure: " + fm/measures.size());
                 System.out.println("--------------------------------------------------------------------------");
                 System.out.println("Done!");
                 break;
 
+            //NOT FUNCTIONAL YET!
             case "6":
                 System.out.println("--------------------------------------------------------------------------");
+                path = new File("src/main/resources/training/onlp/annotated");
+                dirs = path.listFiles(directoryFilter);
+                files = new File[10][];
+                measures = new ArrayList<>();
+                ArrayList<File> evalFiles;
+
+                for (File folder : dirs) {
+                    files[i] = folder.listFiles();
+                    i++;
+                }
+
+                for (File[] f : files) {
+                    trainFiles = new ArrayList<>();
+                    evalFiles = new ArrayList<>();
+                    if (f.length>=10) {
+                        //TODO
+                        Collections.addAll(measures, OpenNLP.evaluate(evalFiles.toArray(new File[evalFiles.size()]), trainFiles.toArray(new File[trainFiles.size()]), 0, false));
+                    }
+                }
+
+                for (FMeasure m : measures) {
+                    pre += m.getPrecisionScore();
+                    rec += m.getRecallScore();
+                    fm += m.getFMeasure();
+                }
+
+                System.out.println("Sector Precision: " + pre/measures.size());
+                System.out.println("Sector Recall: " + rec/measures.size());
+                System.out.println("Sector F-Measure: " + fm/measures.size());
+                System.out.println("--------------------------------------------------------------------------");
+                System.out.println("Done!");
+                break;
+
         }
     }
 
