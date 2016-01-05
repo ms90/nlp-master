@@ -19,6 +19,12 @@ class Main {
     private static int foldCounter = 1;
     private static final FileFilter directoryFilter = File::isDirectory;
 
+    /**
+     * Main point of entry for the application. Choose and enter the appropriate number for processing.
+     * @param args
+     * @throws IOException
+     */
+    @SuppressWarnings("JavaDoc")
     public static void main(String[] args) throws IOException {
         Scanner sc = new Scanner(System.in);
         File dir = new File("src/main/resources/training/conll");
@@ -39,6 +45,8 @@ class Main {
         System.out.println("Enter '4' to copy annotation files into stratified folds (for OpenNLP).");
         System.out.println("Enter '5' to evaluate OpenNLP model in global setting.");
         System.out.println("Enter '6' to evaluate OpenNLP model per sector.");
+        System.out.println("Enter '7' to generate annotated training data for Stanford NLP from exported WebAnno files.");
+        System.out.println("Enter '8' to copy annotation files into stratified folds (for Stanford NLP).");
         System.out.println("--------------------------------------------------------------------------");
 
         switch (sc.nextLine()) {
@@ -69,7 +77,7 @@ class Main {
             case "4":
                 System.out.println("--------------------------------------------------------------------------");
                 System.out.println("Copying files to folds...");
-                createFolds();
+                createFolds(true);
                 System.out.println("Done!");
                 break;
 
@@ -145,9 +153,29 @@ class Main {
                 System.out.println("Done!");
                 break;
 
+            case "7":
+                System.out.println("--------------------------------------------------------------------------");
+                File[] f4 = dir.listFiles(fileFilter);
+
+                for (File f : f4) {
+                    WebAnno.genStanfordNlp(f);
+                }
+                System.out.println("Done!");
+                break;
+
+            case "8":
+                System.out.println("--------------------------------------------------------------------------");
+                System.out.println("Copying files to folds...");
+                createFolds(false);
+                System.out.println("Done!");
+                break;
         }
     }
 
+    /**
+     * Reads the reports.txt file and loads the reports from the SEC website.
+     * Uses the OpenNLP sentence detection and tokenizer to process the reports for annotation.
+     */
     private static void processReports() {
         String[] split;
         String line;
@@ -165,9 +193,22 @@ class Main {
         }
     }
 
-    private static void createFolds() throws IOException {
-        File path = new File("src/main/resources/training/onlp/annotated");
-        File[] dirs = path.listFiles(directoryFilter);
+    /**
+     * Creates folds (as directories) for the cross-validation.
+     * @param onlp True for OpenNLP and false for Stanford NLP
+     * @throws IOException
+     */
+    private static void createFolds(boolean onlp) throws IOException {
+        File annotations;
+        String foldsPath;
+        if (onlp) {
+            annotations = new File("src/main/resources/training/onlp/annotated");
+            foldsPath = "src/main/resources/training/onlp/folds/";
+        } else {
+            annotations = new File("src/main/resources/training/snlp/annotated");
+            foldsPath = "src/main/resources/training/snlp/folds/";
+        }
+        File[] dirs = annotations.listFiles(directoryFilter);
         File[][] files = new File[10][];
         int i = 0;
 
@@ -181,9 +222,8 @@ class Main {
         for (File[] f : files) {
             foldCounter = 1;
             for (File file : f) {
-                findNextFold();
-                Files.copy(file.toPath(), new File("src/main/resources/training/onlp/folds/" + foldCounter + "/" + file.getName()).toPath());
-                //System.out.println("Copy " + file.getName() + " to Fold " + foldCounter);
+                findNextFold(foldsPath);
+                Files.copy(file.toPath(), new File(foldsPath + foldCounter + "/" + file.getName()).toPath());
                 if (foldCounter <10) {
                     foldCounter++;
                 } else {
@@ -193,14 +233,18 @@ class Main {
         }
     }
 
-    private static void findNextFold() {
-        if (new File("src/main/resources/training/onlp/folds/" + foldCounter).list().length >= 10) {
+    /**
+     * Finds the next suitable fold to put the annotation file in.
+     * @param foldsPath The path to the folds
+     */
+    private static void findNextFold(String foldsPath) {
+        if (new File(foldsPath + foldCounter).list().length >= 10) {
             if (foldCounter <10) {
                 foldCounter++;
             } else {
                 foldCounter = 1;
             }
-            findNextFold();
+            findNextFold(foldsPath);
         }
     }
 }

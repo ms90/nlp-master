@@ -1,6 +1,4 @@
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.text.DecimalFormat;
 
 /**
@@ -9,26 +7,27 @@ import java.text.DecimalFormat;
  */
 class WebAnno {
 
+    /**
+     * Creates training data for OpenNLP from WebAnno export files (CoNLL 2002).
+     * @param in CoNLL file to be converted
+     */
     public static void genOpenNlp(File in) {
-
         String line;
         String[] splitLine;
         String[] annoSplit;
         boolean annotation = false;
-        String fileName = in.getName().replace("%26", "&").replace("%2520", " ").replace(".conll", ".an");
+        String fileName = in.getName().replace("%26", "&").replace("%2520", " ").replace(".conll", ".train");
         File out = new File("src/main/resources/training/onlp/annotated/" + fileName);
         StringBuilder sb = new StringBuilder();
+        boolean write = false;
+        boolean lastLine = false;
 
         System.out.println("Processing " + "\"" + in.getName() + "\"");
 
         try (BufferedReader br = new BufferedReader(new FileReader(in)); BufferedWriter bw = new BufferedWriter(new FileWriter(out))) {
             while ((line = br.readLine()) != null) {
-                if (line.isEmpty()) {
-                    bw.write(sb.toString().trim());
-                    sb.setLength(0);
-                    bw.newLine();
-                } else {
-                    splitLine = line.split(" ");
+                if (!(line.isEmpty() || lastLine)) {
+                    splitLine = line.trim().split(" ");
                     if (splitLine[1].equals("O")) {
                         if (annotation) {
                             sb.append("<END> ");
@@ -37,58 +36,101 @@ class WebAnno {
                         sb.append(splitLine[0]).append(" ");
                     } else {
                         annoSplit = splitLine[1].split("-");
-                        if (annoSplit[0].equals("B")) {
-                            if (annotation) {
-                                sb.append("<END> ");
-                            }
-                            annotation = true;
-                            sb.append("<START:").append(annoSplit[1]).append("> ").append(splitLine[0]).append(" ");
-                        }
-                        if (annoSplit[0].equals("I")) {
-                            annotation = true;
-                            sb.append(splitLine[0]).append(" ");
+                        switch (annoSplit[0]) {
+                            case "B":
+                                switch (annoSplit[1]) {
+                                    case "START":
+                                        write = true;
+                                        sb.setLength(0);
+                                        sb.append(splitLine[0]).append(" ");
+                                        break;
+                                    case "END":
+                                        write = false;
+                                        lastLine = true;
+                                        sb.append(splitLine[0]).append(" .");
+                                        break;
+                                    default:
+                                        if (annotation) {
+                                            sb.append("<END> ");
+                                        }
+                                        annotation = true;
+                                        sb.append("<START:").append(annoSplit[1]).append("> ").append(splitLine[0]).append(" ");
+                                }
+                                break;
+                            case "I":
+                                annotation = true;
+                                sb.append(splitLine[0]).append(" ");
+                                break;
                         }
                     }
-                    sb.append(splitLine[0]).append(" ");
+                } else {
+                    if (write || lastLine) {
+                        bw.write(sb.toString().trim());
+                        if (!lastLine) {
+                            bw.newLine();
+                        }
+                    }
+                    sb.setLength(0);
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        postProcessFile(out);  //Trims file to Part I only (as best as possible) and corrects some punctuation errors
-        System.out.println("-----------------------------------------------");
+        System.out.println("--------------------------------------------------------------------------");
     }
 
-    private static void postProcessFile(File in) {
-        //System.out.println(in.getPath());
+    /**
+     * Creates tab-separated training data (Penn Treebank) from WebAnno export files (CoNLL 2002).
+     * @param in CoNLL file to be converted
+     */
+    public static void genStanfordNlp(File in) {
+        String fileName = in.getName().replace("%26", "&").replace("%2520", " ").replace(".conll", ".tsv");
+        File out = new File("src/main/resources/training/snlp/" + fileName);
         String line;
-        boolean start = false;
-        int lineCounter = 0;
-        String fileName = in.getName().replace(".an", "-p1.an");
-        File out = new File("src/main/resources/training/onlp/annotated/" + fileName);
+        String[] splitLine;
+        String[] annotation;
+        StringBuilder sb = new StringBuilder();
+        boolean write = false;
+//        int lineNumber = 0;
+
+        System.out.println("Processing " + "\"" + in.getName() + "\"");
 
         try (BufferedReader br = new BufferedReader(new FileReader(in)); BufferedWriter bw = new BufferedWriter(new FileWriter(out))) {
             while ((line = br.readLine()) != null) {
-                lineCounter++;
-                if (line.toLowerCase().contains("item 1")){
-                    start = true;
-                }
-                if (start) {
-                    bw.write(line);
-                    bw.newLine();
-                }
-                if (line.toLowerCase().contains("mine safety disclosures") && lineCounter > 150) {
-                    break;
+//                lineNumber++;
+                sb.setLength(0);
+                boolean lastLine = false;
+                if (!line.isEmpty()) {
+//                    System.out.println(lineNumber + " " + line);
+                    splitLine = line.trim().split(" ");
+                    if (splitLine[1].equals("O")) {
+                        sb.append(splitLine[0]).append("\t").append(splitLine[1]).append("\n");
+                    } else {
+                        annotation = splitLine[1].split("-");
+                        switch (annotation[1]) {
+                            case "START":
+                                write = true;
+                                sb.append(splitLine[0]).append("\tO\n");
+                                break;
+                            case "END":
+                                write = false;
+                                lastLine = true;
+                                sb.append(splitLine[0]).append("\tO\n.\tO");
+                                break;
+                            default:
+                                sb.append(splitLine[0]).append("\t").append(annotation[1]).append("\n");
+                                break;
+                        }
+                    }
+                    if (write || lastLine) {
+                        bw.write(sb.toString());
+                    }
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        try {
-            Files.delete(Paths.get(in.getPath()));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        System.out.println("--------------------------------------------------------------------------");
     }
 
     public static void runStatistics(File in) {

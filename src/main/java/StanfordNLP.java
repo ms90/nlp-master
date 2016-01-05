@@ -1,5 +1,5 @@
 /**
- * NER Pipeline consisting of sentence detector, tokenizer and named entity recognizer
+ * Named Entity Recognizer from the Stanford NLP library.
  * @author Maxim Serebrianski
  */
 
