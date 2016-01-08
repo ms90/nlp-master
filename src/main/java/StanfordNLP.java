@@ -1,4 +1,7 @@
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 /**
  * Named Entity Recognizer from the Stanford NLP library.
@@ -31,6 +34,7 @@ class StanfordNLP {
      * @param evalFold Fold currently being evaluated
      * @return Generated training file
      */
+    /*
     public static File createTrainingFile(File[] files, int evalFold) {
         if (evalFold != 0) {
             System.out.println("Evaluating fold " + evalFold);
@@ -51,5 +55,5 @@ class StanfordNLP {
             }
         }
         return trainFile;
-    }
+    }*/
 }
