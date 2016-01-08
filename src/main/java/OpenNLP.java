@@ -15,14 +15,27 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 /**
- * NER Pipeline consisting of sentence detector, tokenizer and named entity recognizer
+ * NER Pipeline consisting of sentence detector, tokenizer and named entity recognizer.
+ * Exposes the 'evaluate' method which internally performs the necessary steps to create the training file,
+ * train the model and evaluate the model against test files.
  * @author Maxim Serebrianski
  */
 class OpenNLP {
 
-    public static void preProcess(String text, File out) throws FileNotFoundException {
-        SentenceModel sm = loadSentenceModel();
-        TokenizerModel tm = loadTokenizerModel();
+    /**
+     * Performs pre-processing like loading models and recording processing time.
+     * @param text Report as plain text
+     * @param out Tokenized report
+     */
+    public static void preProcess(String text, File out) {
+        SentenceModel sm = null;
+        TokenizerModel tm = null;
+        try {
+            sm = loadSentenceModel();
+            tm = loadTokenizerModel();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
 
         long startTime = System.currentTimeMillis();
 
@@ -33,6 +46,14 @@ class OpenNLP {
         System.out.println("-----------------------------------------------");
     }
 
+    /**
+     * 1. Splits the text into sentences
+     * 2. Generates tokenized form of the text separated by a blank space character between each token
+     * @param text Text to be tokenized
+     * @param output File with tokenized text
+     * @param sm Sentence model used to split the text into sentences
+     * @param tm Tokenizer model used to tokenize the text
+     */
     private static void generateTokenizedReport(String text, File output, SentenceModel sm, TokenizerModel tm) {
         try(BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(output), "UTF-8"))) {
             String[] sentences = detectSentences(text, sm);
@@ -50,6 +71,11 @@ class OpenNLP {
         }
     }
 
+    /**
+     * Loads the sentence model.
+     * @return Sentence model
+     * @throws FileNotFoundException
+     */
     private static SentenceModel loadSentenceModel() throws FileNotFoundException {
     	InputStream modelIn = new FileInputStream("src/main/resources/models/onlp/opensource/en-sent.bin");
         SentenceModel model = null;
@@ -67,7 +93,12 @@ class OpenNLP {
         }
         return model;
     }
-    
+
+    /**
+     * Loads the tokenizer model.
+     * @return Tokenizer model
+     * @throws FileNotFoundException
+     */
     private static TokenizerModel loadTokenizerModel() throws FileNotFoundException {
     	InputStream modelIn = new FileInputStream("src/main/resources/models/onlp/opensource/en-token.bin");
         TokenizerModel model = null;
@@ -85,17 +116,37 @@ class OpenNLP {
         }
         return model;
     }
-    
+
+    /**
+     * Splits the text into sentences.
+     * @param text Text to be split
+     * @param model Sentence model
+     * @return Array of sentences
+     */
     private static String[] detectSentences(String text, SentenceModel model) {
         SentenceDetectorME sentenceDetector = new SentenceDetectorME(model);
         return sentenceDetector.sentDetect(text);
     }
 
+    /**
+     * Converts the text into single tokens.
+     * @param input Sentence as string
+     * @param model Tokenizer model
+     * @return Array of tokens
+     */
     private static String[] tokenizeSentence(String input, TokenizerModel model) {
         Tokenizer tokenizer = new TokenizerME(model);
         return tokenizer.tokenize(input);
     }
 
+    /**
+     * Trains the model and generates a model file on the hard-drive.
+     * @param annotations File with training data
+     * @param global True = global cross-validation
+     *               False = sector-specific cross-validation
+     * @return Trained model
+     * @throws IOException
+     */
     private static File trainModel(File annotations, boolean global) throws IOException {
         Charset charset = Charset.forName("UTF-8");
         ObjectStream<NameSample> sampleStream;
@@ -132,6 +183,12 @@ class OpenNLP {
         return out;
     }
 
+    /**
+     * Creates the training file for a specific fold of the cross-validation by stitching together all the separate training files.
+     * @param files Training files that need to be combined
+     * @param evalFold Fold currently being evaluated
+     * @return Generated training file
+     */
     private static File createTrainingFile(File[] files, int evalFold) {
         if (evalFold != 0) {
             System.out.println("Evaluating fold " + evalFold);
@@ -155,6 +212,16 @@ class OpenNLP {
         return trainFile;
     }
 
+    /**
+     * Evaluates the trained model against test files and calculates Precision, Recall, F1-Measure.
+     * @param testFiles Gold standard
+     * @param trainFiles Separate training files
+     * @param evalFold Fold currently being evaluated
+     * @param global True = global cross-validation
+     *               False = sector-specific cross-validation
+     * @return Array of results, one for each test file
+     * @throws IOException
+     */
     public static FMeasure[] evaluate(File[] testFiles, File[] trainFiles, int evalFold, boolean global) throws IOException {
         ObjectStream<String> lineStream;
         NameSampleDataStream testStream;

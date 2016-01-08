@@ -133,6 +133,10 @@ class WebAnno {
         System.out.println("--------------------------------------------------------------------------");
     }
 
+    /**
+     * Creates statistic on the occurence of the different labels.
+     * @param in Report being evaluated
+     */
     public static void runStatistics(File in) {
         String line;
         int tokens = 0;

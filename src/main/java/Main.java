@@ -195,7 +195,8 @@ class Main {
 
     /**
      * Creates folds (as directories) for the cross-validation.
-     * @param onlp True for OpenNLP and false for Stanford NLP
+     * @param onlp True = OpenNLP
+     *             False = Stanford NLP
      * @throws IOException
      */
     private static void createFolds(boolean onlp) throws IOException {
@@ -235,7 +236,7 @@ class Main {
 
     /**
      * Finds the next suitable fold to put the annotation file in.
-     * @param foldsPath The path to the folds
+     * @param foldsPath Path to the folds
      */
     private static void findNextFold(String foldsPath) {
         if (new File(foldsPath + foldCounter).list().length >= 10) {
