@@ -6,10 +6,7 @@ import org.jsoup.nodes.Document;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Scanner;
+import java.util.*;
 
 /**
  * Main class for parsing the report and initializing the NLP pipeline
@@ -41,22 +38,28 @@ class Main {
 
         System.out.println("Enter '1' to generate unannotated training data from 10-K reports.");
         System.out.println("Enter '2' to generate annotated training data for OpenNLP from exported WebAnno files.");
-        System.out.println("Enter '3' to generate statistics from exported WebAnno files.");
+        System.out.println("Enter '3-1' to generate statistics from exported WebAnno files (all documents).");
+        System.out.println("Enter '3-2' to generate statistics from exported WebAnno files (per domain).");
         System.out.println("Enter '4' to copy annotation files into stratified folds (for OpenNLP).");
         System.out.println("Enter '5' to evaluate OpenNLP model in global setting.");
-        System.out.println("Enter '6' to evaluate OpenNLP model per sector.");
-        System.out.println("Enter '7' to generate annotated training data for Stanford NLP from exported WebAnno files.");
-        System.out.println("Enter '8' to copy annotation files into stratified folds (for Stanford NLP).");
+        System.out.println("Enter '6' to generate annotated training data for Stanford NLP from exported WebAnno files.");
+        System.out.println("Enter '7' to copy annotation files into stratified folds (for Stanford NLP, full).");
+        System.out.println("Enter '8' to train Stanford NLP classifier for cross-validation (full).");
+        System.out.println("Enter '9' to train Stanford NLP classifier with 50% of training files (full).");
+        System.out.println("Enter '10' to generate annotated training data for Stanford NLP from exported WebAnno files and keep only annotated sentences.");
+        System.out.println("Enter '11' to copy annotation files into stratified folds (for Stanford NLP, annotated only).");
+        System.out.println("Enter '12' to train Stanford NLP classifier for cross-validation (annotated only).");
+        System.out.println("Enter '13' to train Stanford NLP classifier with 50% of training files (annotated only).");
         System.out.println("--------------------------------------------------------------------------");
 
         switch (sc.nextLine()) {
-            case "1":
+            case "1":   // unannotated training data from 10-K reports
                 System.out.println("--------------------------------------------------------------------------");
                 processReports();
                 System.out.println("Done!");
                 break;
 
-            case "2":
+            case "2":   // annotated training data for OpenNLP
                 System.out.println("--------------------------------------------------------------------------");
                 File[] f1 = dir.listFiles(fileFilter);
                 for (File f : f1) {
@@ -65,23 +68,36 @@ class Main {
                 System.out.println("Done!");
                 break;
 
-            case "3":
+            case "3-1":   // statistics on exported WebAnno files (full)
                 System.out.println("--------------------------------------------------------------------------");
                 File[] f3 = dir.listFiles(fileFilter);
-                for (File f : f3) {
-                    WebAnno.runStatistics(f);
+                System.out.println("All Documents");
+                System.out.println();
+                WebAnno.runStatistics(f3);
+                System.out.println("Done!");
+                break;
+
+            case "3-2": // statistics on exported WebAnno files (per domain)
+                System.out.println("--------------------------------------------------------------------------");
+                path = new File("src/main/resources/training/conll/domains");
+                dirs = path.listFiles(directoryFilter);
+
+                for (File folder : dirs) {
+                    System.out.println(folder.getName());
+                    System.out.println();
+                    WebAnno.runStatistics(folder.listFiles());
                 }
                 System.out.println("Done!");
                 break;
 
-            case "4":
+            case "4":   // generate folds for OpenNLP
                 System.out.println("--------------------------------------------------------------------------");
                 System.out.println("Copying files to folds...");
-                createFolds(true);
+                createFolds(true, false);
                 System.out.println("Done!");
                 break;
 
-            case "5":
+            case "5":   // 10-fold cross-validation (OpenNLP)
                 System.out.println("--------------------------------------------------------------------------");
                 path = new File("src/main/resources/training/onlp/folds");
                 dirs = path.listFiles(directoryFilter);
@@ -117,8 +133,8 @@ class Main {
                 System.out.println("Done!");
                 break;
 
-            //NOT FUNCTIONAL YET!
-            case "6":
+            /*
+            case "6":   // sector-specific validation (OpenNLP)
                 System.out.println("--------------------------------------------------------------------------");
                 path = new File("src/main/resources/training/onlp/annotated");
                 dirs = path.listFiles(directoryFilter);
@@ -151,9 +167,9 @@ class Main {
                 System.out.println("Sector F-Measure: " + fm/measures.size());
                 System.out.println("--------------------------------------------------------------------------");
                 System.out.println("Done!");
-                break;
+                break;*/
 
-            case "7":
+            case "6":   // generate training data for Stanford NLP (full)
                 System.out.println("--------------------------------------------------------------------------");
                 File[] f4 = dir.listFiles(fileFilter);
 
@@ -163,13 +179,174 @@ class Main {
                 System.out.println("Done!");
                 break;
 
-            case "8":
+            case "7":   // generate folds for Stanford NLP (full)
                 System.out.println("--------------------------------------------------------------------------");
                 System.out.println("Copying files to folds...");
-                createFolds(false);
+                createFolds(false, false);
                 System.out.println("Done!");
                 break;
+
+            case "8":   // train Stanford classifier with model 10 for 10-fold cross-validation (full)
+                trainSnlpBestCross(false);
+                break;
+
+            case "9":  // train Stanford classifier with different feature sets on 50% data, test on 20% (full)
+                trainSnlpFeatureSets(false);
+                break;
+
+            case "10":  //Generate Stanford NLP training data (annotated only)
+                System.out.println("--------------------------------------------------------------------------");
+                File[] f5 = dir.listFiles(fileFilter);
+
+                for (File f : f5) {
+                    WebAnno.genStanNlpAnnoOnly(f);
+                }
+                System.out.println("Done!");
+                break;
+
+            case "11":   // generate folds for Stanford NLP (annotated only)
+                System.out.println("--------------------------------------------------------------------------");
+                System.out.println("Copying files to folds...");
+                createFolds(false, true);
+                System.out.println("Done!");
+                break;
+
+            case "12":   // train Stanford classifier with model 10 for 10-fold cross-validation (annotated only)
+                trainSnlpBestCross(true);
+                break;
+
+            case "13":  // train Stanford classifier with different feature sets on 50% data, test on 20% (annotated only)
+                trainSnlpFeatureSets(true);
+                break;
         }
+    }
+
+    private static void trainSnlpFeatureSets(boolean annoOnly) {
+        System.out.println("--------------------------------------------------------------------------");
+        File path;
+        if (annoOnly) {
+            path = new File("src/main/resources/training/snlp/anno/folds");
+        } else {
+            path = new File("src/main/resources/training/snlp/full/folds");
+        }
+        File[] dirs = path.listFiles(directoryFilter);
+        File[][] files = new File[10][];
+        StringBuilder filesList = new StringBuilder();
+        Properties pr;
+        int i = 0;
+
+        for (File folder : dirs) {
+            files[i] = folder.listFiles();
+            i++;
+        }
+
+        for (int j=0; j<5; j++) {
+            for (File file : files[j]) {
+                filesList.append(file.getPath()).append(",");
+            }
+        }
+        filesList.deleteCharAt(filesList.length()-1);
+
+        for (int k=0; k<14; k++) {
+            pr = StanfordNLP.setProperties(filesList.toString(), k);
+            StanfordNLP.trainClassifier(pr, k, 999, false, annoOnly);
+            System.out.println("--------------------------------------------------------------------------");
+        }
+
+        filesList.setLength(0);
+
+        path = new File("D:/Java/stanford-ner/testfiles/features");
+        File[] testfiles = path.listFiles();
+
+        if (testfiles != null) {
+            for (File f : testfiles) {
+                filesList.append("testfiles/features/").append(f.getName()).append(",");
+            }
+        }
+        filesList.deleteCharAt(filesList.length()-1);
+
+        if (annoOnly) {
+            path = new File("D:/Java/stanford-ner/classifiers/features/anno/");
+        } else {
+            path = new File("D:/Java/stanford-ner/classifiers/features/full/");
+        }
+        File[] classifiers = path.listFiles();
+
+        if (classifiers != null) {
+            for (File f : classifiers) {
+                if (annoOnly) {
+                    StanfordNLP.createBatchFile(filesList.toString(), "classifiers/features/anno/" + f.getName());
+                } else {
+                    StanfordNLP.createBatchFile(filesList.toString(), "classifiers/features/full/" + f.getName());
+                }
+            }
+        }
+
+        System.out.println("Done!");
+    }
+
+    private static void trainSnlpBestCross(boolean annoOnly) {
+        System.out.println("--------------------------------------------------------------------------");
+        File path;
+        if (annoOnly) {
+            path = new File("src/main/resources/training/snlp/anno/folds");
+        } else {
+            path = new File("src/main/resources/training/snlp/full/folds");
+        }
+        File[] dirs = path.listFiles(directoryFilter);
+        File[][] files = new File[10][];
+        StringBuilder fileList = new StringBuilder();
+        Properties props;
+        int i = 0;
+
+        for (File folder : dirs) {
+            files[i] = folder.listFiles();
+            i++;
+        }
+
+        for (int j=0; j<10; j++) {
+            fileList.setLength(0);
+            for (File[] f : files) {
+                if (!Arrays.equals(f, files[j])) {
+                    for (File file : f) {
+                        fileList.append(file.getPath()).append(",");
+                    }
+                }
+            }
+            fileList.deleteCharAt(fileList.length()-1);
+
+            props = StanfordNLP.setProperties(fileList.toString(), 10);
+
+            StanfordNLP.trainClassifier(props, 10, j, true, annoOnly);
+
+            fileList.setLength(0);
+
+            if (annoOnly) {
+                path = new File("D:/java/stanford-ner/testfiles/cross/anno/" + j);
+            } else {
+                path = new File("D:/java/stanford-ner/testfiles/cross/full/" + j);
+            }
+            File[] testfiles = path.listFiles();
+
+            if (testfiles != null) {
+                for (File f : testfiles) {
+                    if (annoOnly) {
+                        fileList.append("testfiles/cross/anno/").append(j).append("/").append(f.getName()).append(",");
+                    } else {
+                        fileList.append("testfiles/cross/full/").append(j).append("/").append(f.getName()).append(",");
+                    }
+                }
+            }
+            fileList.deleteCharAt(fileList.length()-1);
+
+            if (annoOnly) {
+                StanfordNLP.createBatchFile(fileList.toString(), "classifiers/cross/anno/" + j + "-eval.ser.gz");
+            } else {
+                StanfordNLP.createBatchFile(fileList.toString(), "classifiers/cross/full/" + j + "-eval.ser.gz");
+            }
+            System.out.println("--------------------------------------------------------------------------");
+        }
+        System.out.println("Done!");
     }
 
     /**
@@ -197,17 +374,24 @@ class Main {
      * Creates folds (as directories) for the cross-validation.
      * @param onlp True = OpenNLP
      *             False = Stanford NLP
+     * @param annoOnly  True = Annotated sentences only
+     *                  False = Full
      * @throws IOException
      */
-    private static void createFolds(boolean onlp) throws IOException {
+    private static void createFolds(boolean onlp, boolean annoOnly) throws IOException {
         File annotations;
         String foldsPath;
         if (onlp) {
             annotations = new File("src/main/resources/training/onlp/annotated");
             foldsPath = "src/main/resources/training/onlp/folds/";
         } else {
-            annotations = new File("src/main/resources/training/snlp/annotated");
-            foldsPath = "src/main/resources/training/snlp/folds/";
+            if (annoOnly) {
+                annotations = new File("src/main/resources/training/snlp/anno/annotated");
+                foldsPath = "src/main/resources/training/snlp/anno/folds/";
+            } else {
+                annotations = new File("src/main/resources/training/snlp/full/annotated");
+                foldsPath = "src/main/resources/training/snlp/full/folds/";
+            }
         }
         File[] dirs = annotations.listFiles(directoryFilter);
         File[][] files = new File[10][];
@@ -221,14 +405,14 @@ class Main {
         Arrays.sort(files, (left, right) -> Integer.compare(left.length, right.length));
 
         for (File[] f : files) {
-            foldCounter = 1;
+            foldCounter = 0;
             for (File file : f) {
                 findNextFold(foldsPath);
                 Files.copy(file.toPath(), new File(foldsPath + foldCounter + "/" + file.getName()).toPath());
-                if (foldCounter <10) {
+                if (foldCounter <9) {
                     foldCounter++;
                 } else {
-                    foldCounter = 1;
+                    foldCounter = 0;
                 }
             }
         }
@@ -240,10 +424,10 @@ class Main {
      */
     private static void findNextFold(String foldsPath) {
         if (new File(foldsPath + foldCounter).list().length >= 10) {
-            if (foldCounter <10) {
+            if (foldCounter <9) {
                 foldCounter++;
             } else {
-                foldCounter = 1;
+                foldCounter = 0;
             }
             findNextFold(foldsPath);
         }
