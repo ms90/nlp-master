@@ -13,6 +13,12 @@ import java.util.Properties;
 
 class StanfordNLP {
 
+    /**
+     * Sets the properties for the model training
+     * @param trainFileList List of training files
+     * @param set Feature set
+     * @return Properties object containing a list of properties
+     */
     public static Properties setProperties(String trainFileList, int set) {
         Properties props = new Properties();
 
@@ -267,6 +273,15 @@ class StanfordNLP {
         return props;
     }
 
+    /**
+     * Trains the classifier
+     * @param props Properties for training
+     * @param featureSet Feature set
+     * @param evalFold Cross-validation fold the model is trained for
+     * @param crossValidation Cross-validation mode
+     * @param annoOnly Use annotated sentences in training data only
+     * @return Trained classifier
+     */
     public static CRFClassifier trainClassifier(Properties props, int featureSet, int evalFold, boolean crossValidation, boolean annoOnly) {
         CRFClassifier classifier = new CRFClassifier(props);
         classifier.train();
@@ -300,7 +315,12 @@ class StanfordNLP {
         return classifier;
     }
 
-    public static void createBatchFile(String testFiles, String classifier) {
+    /**
+     * Generates a scriptfile for evaluating the classifier
+     * @param testFiles List of files to test the classifier on
+     * @param classifier Path to the classifier
+     */
+    public static void createEvalScript(String testFiles, String classifier) {
         String[] cl = classifier.split("/");
         File out = new File("D:/Java/stanford-ner/" + cl[cl.length-1] + ".bat");
 

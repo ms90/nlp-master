@@ -252,9 +252,9 @@ class Main {
         if (classifiers != null) {
             for (File f : classifiers) {
                 if (annoOnly) {
-                    StanfordNLP.createBatchFile(filesList.toString(), "classifiers/features/anno/" + f.getName());
+                    StanfordNLP.createEvalScript(filesList.toString(), "classifiers/features/anno/" + f.getName());
                 } else {
-                    StanfordNLP.createBatchFile(filesList.toString(), "classifiers/features/full/" + f.getName());
+                    StanfordNLP.createEvalScript(filesList.toString(), "classifiers/features/full/" + f.getName());
                 }
             }
         }
@@ -263,7 +263,7 @@ class Main {
     }
 
     /**
-     *
+     * Trains models for 10-fold cross-validation with feature set 10 (best results)
      * @param annoOnly True uses only annotated sentences; false uses full reports
      */
     private static void trainSnlpBestCross(boolean annoOnly) {
@@ -321,9 +321,9 @@ class Main {
             fileList.deleteCharAt(fileList.length()-1);
 
             if (annoOnly) {
-                StanfordNLP.createBatchFile(fileList.toString(), "classifiers/cross/anno/" + j + "-eval.ser.gz");
+                StanfordNLP.createEvalScript(fileList.toString(), "classifiers/cross/anno/" + j + "-eval.ser.gz");
             } else {
-                StanfordNLP.createBatchFile(fileList.toString(), "classifiers/cross/full/" + j + "-eval.ser.gz");
+                StanfordNLP.createEvalScript(fileList.toString(), "classifiers/cross/full/" + j + "-eval.ser.gz");
             }
             System.out.println("--------------------------------------------------------------------------");
         }
