@@ -282,16 +282,25 @@ class StanfordNLP {
      * @param annoOnly Use annotated sentences in training data only
      * @return Trained classifier
      */
-    public static CRFClassifier trainClassifier(Properties props, int featureSet, int evalFold, boolean crossValidation, boolean annoOnly) {
+    public static CRFClassifier trainClassifier(Properties props, int featureSet, int evalFold, boolean crossValidation, boolean annoOnly, boolean domain, String domainName) {
         CRFClassifier classifier = new CRFClassifier(props);
         classifier.train();
         if (crossValidation) {
-            if (annoOnly) {
+            if (annoOnly && !domain) {
                 classifier.serializeClassifier("src/main/resources/models/snlp/cross/anno/" + evalFold + "-eval.ser.gz");
                 classifier.serializeClassifier("D:/java/stanford-ner/classifiers/cross/anno/" + evalFold + "-eval.ser.gz");
-            } else {
+            }
+            if (!annoOnly && !domain) {
                 classifier.serializeClassifier("src/main/resources/models/snlp/cross/full/" + evalFold + "-eval.ser.gz");
                 classifier.serializeClassifier("D:/java/stanford-ner/classifiers/cross/full/" + evalFold + "-eval.ser.gz");
+            }
+            if (annoOnly && domain) {
+                classifier.serializeClassifier("src/main/resources/models/snlp/cross/domain/anno/" + domainName + "/" + evalFold + "-eval.ser.gz");
+                classifier.serializeClassifier("D:/java/stanford-ner/classifiers/cross/domain/anno/" + domainName + "/" + evalFold + "-eval.ser.gz");
+            }
+            if (!annoOnly && domain) {
+                classifier.serializeClassifier("src/main/resources/models/snlp/cross/domain/full/" + domainName + "/" + evalFold + "-eval.ser.gz");
+                classifier.serializeClassifier("D:/java/stanford-ner/classifiers/cross/domain/full/" + domainName + "/" + evalFold + "-eval.ser.gz");
             }
         } else {
             if (annoOnly) {
@@ -320,9 +329,14 @@ class StanfordNLP {
      * @param testFiles List of files to test the classifier on
      * @param classifier Path to the classifier
      */
-    public static void createEvalScript(String testFiles, String classifier) {
+    public static void createEvalScript(String testFiles, String classifier, String domainName) {
         String[] cl = classifier.split("/");
-        File out = new File("D:/Java/stanford-ner/" + cl[cl.length-1] + ".bat");
+        File out;
+        if (!domainName.equals("")) {
+            out = new File("D:/Java/stanford-ner/" + domainName + "-" + cl[cl.length-1] + ".bat");
+        } else {
+            out = new File("D:/Java/stanford-ner/" + cl[cl.length-1] + ".bat");
+        }
 
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(out))) {
 //            bw.write("d:");

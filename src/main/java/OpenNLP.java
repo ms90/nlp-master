@@ -190,10 +190,8 @@ class OpenNLP {
      * @return Generated training file
      */
     private static File createTrainingFile(File[] files, int evalFold) {
-        if (evalFold != 0) {
-            System.out.println("Evaluating fold " + evalFold);
-            System.out.println();
-        }
+        System.out.println("Evaluating fold " + evalFold);
+        System.out.println();
         String line;
 
         File trainFile = new File("src/main/resources/training/onlp/tmp.train");
@@ -235,39 +233,33 @@ class OpenNLP {
             TokenNameFinderModel nameFinderModel = new TokenNameFinderModel(trainModel(createTrainingFile(trainFiles, evalFold), true));
             evaluator = new TokenNameFinderEvaluator(new NameFinderME(nameFinderModel));
         } else {
-            TokenNameFinderModel nameFinderModel = new TokenNameFinderModel(trainModel(createTrainingFile(trainFiles, 0), false));
+            TokenNameFinderModel nameFinderModel = new TokenNameFinderModel(trainModel(createTrainingFile(trainFiles, evalFold), false));
             evaluator = new TokenNameFinderEvaluator(new NameFinderME(nameFinderModel));
         }
 
         for (File f : testFiles) {
-            System.out.println("--------------------------------------------------------------------------");
-            System.out.println("Evaluating " + f.getName());
+//            System.out.println("--------------------------------------------------------------------------");
+//            System.out.println("Evaluating " + f.getName());
             lineStream = new PlainTextByLineStream(new FileInputStream(f), "UTF-8");
             testStream = new NameSampleDataStream(lineStream);
             evaluator.evaluate(testStream);
             measures.add(evaluator.getFMeasure());
-            System.out.println();
-            System.out.println(evaluator.getFMeasure().toString());
+//            System.out.println();
+//            System.out.println(evaluator.getFMeasure().toString());
         }
 
-        for (FMeasure m : measures) {
-            pre += m.getPrecisionScore();
-            rec += m.getRecallScore();
-            fm += m.getFMeasure();
+        /*for (FMeasure m : measures) {
+            if (m.getPrecisionScore() > 0.0 && m.getRecallScore() > 0.0 && m.getFMeasure() > 0.0) {
+                pre += m.getPrecisionScore();
+                rec += m.getRecallScore();
+                fm += m.getFMeasure();
+            }
         }
 
-        if (evalFold != 0) {
-            System.out.println("--------------------------------------------------------------------------");
-            System.out.println("Average Precision for fold " + evalFold + ": " + pre/measures.size());
-            System.out.println("Average Recall for fold " + evalFold + ": " + rec/measures.size());
-            System.out.println("Average F-Measure for fold " + evalFold + ": " + fm/measures.size());
-        } else {
-            String[] dir = testFiles[0].getParent().split("\\\\");
-            System.out.println("--------------------------------------------------------------------------");
-            System.out.println("Average Precision for '" + dir[dir.length] + "': " + pre/measures.size());
-            System.out.println("Average Recall for '" + dir[dir.length] + "': " + rec/measures.size());
-            System.out.println("Average F-Measure for '" + dir[dir.length] + "': " + fm/measures.size());
-        }
+        System.out.println("--------------------------------------------------------------------------");
+        System.out.println("Average Precision for fold " + evalFold + ": " + pre/measures.size());
+        System.out.println("Average Recall for fold " + evalFold + ": " + rec/measures.size());
+        System.out.println("Average F-Measure for fold " + evalFold + ": " + fm/measures.size());*/
 
         return measures.toArray(new FMeasure[measures.size()]);
     }
