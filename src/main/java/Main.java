@@ -43,6 +43,9 @@ class Main {
         System.out.println("Enter '11' to copy annotation files into stratified folds (for Stanford NLP, annotated only).");
         System.out.println("Enter '12' to train Stanford NLP classifier for cross-validation (annotated only).");
         System.out.println("Enter '13' to train Stanford NLP classifier with 50% of training files (annotated only).");
+        System.out.println("Enter '14' to run domain specific evaluation for OpenNLP.");
+        System.out.println("Enter '15' to run domain specific evaluation for Stanford CoreNLP (full).");
+        System.out.println("Enter '16' to run domain specific evaluation for Stanford CoreNLP (annotated only).");
         System.out.println("--------------------------------------------------------------------------");
 
         switch (sc.nextLine()) {
@@ -155,7 +158,7 @@ class Main {
             case "16":  // domain specific evaluation (Stanford NLP, annotations only)
                 evaluateDomainSnlp(true);
                 break;
-    }
+        }
     }
 
     private static void evaluateDomainOpenNlp() {
@@ -362,12 +365,20 @@ class Main {
 
         filesList.setLength(0);
 
-        path = new File("D:/Java/stanford-ner/testfiles/features");
+        if (annoOnly) {
+            path = new File("D:/Java/stanford-ner/testfiles/features/anno");
+        } else {
+            path = new File("D:/Java/stanford-ner/testfiles/features/full");
+        }
         File[] testfiles = path.listFiles();
 
         if (testfiles != null) {
             for (File f : testfiles) {
-                filesList.append("testfiles/features/").append(f.getName()).append(",");
+                if (annoOnly){
+                    filesList.append("testfiles/features/anno/").append(f.getName()).append(",");
+                } else {
+                    filesList.append("testfiles/features/full/").append(f.getName()).append(",");
+                }
             }
         }
         filesList.deleteCharAt(filesList.length()-1);

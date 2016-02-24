@@ -225,9 +225,9 @@ class OpenNLP {
         NameSampleDataStream testStream;
         TokenNameFinderEvaluator evaluator;
         ArrayList<FMeasure> measures = new ArrayList<>();
-        Double pre = 0.0;
-        Double rec = 0.0;
-        Double fm = 0.0;
+//        Double pre = 0.0;
+//        Double rec = 0.0;
+//        Double fm = 0.0;
 
         if (global) {
             TokenNameFinderModel nameFinderModel = new TokenNameFinderModel(trainModel(createTrainingFile(trainFiles, evalFold), true));
@@ -238,14 +238,14 @@ class OpenNLP {
         }
 
         for (File f : testFiles) {
-//            System.out.println("--------------------------------------------------------------------------");
-//            System.out.println("Evaluating " + f.getName());
+            System.out.println("--------------------------------------------------------------------------");
+            System.out.println("Evaluating " + f.getName());
             lineStream = new PlainTextByLineStream(new FileInputStream(f), "UTF-8");
             testStream = new NameSampleDataStream(lineStream);
             evaluator.evaluate(testStream);
             measures.add(evaluator.getFMeasure());
-//            System.out.println();
-//            System.out.println(evaluator.getFMeasure().toString());
+            System.out.println();
+            System.out.println(evaluator.getFMeasure().toString());
         }
 
         /*for (FMeasure m : measures) {
